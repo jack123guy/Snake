@@ -4,12 +4,18 @@ import java.util.Scanner;
 import static java.lang.System.out;
 
 public class Snake2 {
-	int row, col;
 
 	public static void main(String[] args) {
+		int row = 0, col = 0;
 		Map m = new Map();
+		TreeNode nextNode;
 		WalkPath wp = new WalkPath(m.map);
+
 	}
+}
+
+enum direction {
+	UP, DOWN, RIGHT;
 }
 
 class TreeNode {
@@ -25,19 +31,16 @@ class TreeNode {
 	int getValue() {
 		return value;
 	}
-
-	TreeNode getParent() {
-		return parent;
-	}
-
 }
 
 class WalkPath {
 
 	int[][] map;
-	int key = 0;
-	int row = 0, col = 0;
+	int row = 0, col = 0, key = 0, walkTime = 0;
+	int pathnum = 0; // 所有可能路徑數目，為零時就走完了
+	boolean DownSignal = true;
 	TreeNode nowNode, root;
+	direction dir;
 
 	WalkPath(int[][] map) {
 		this.map = map;
@@ -54,27 +57,92 @@ class WalkPath {
 		out.printf("出發點為 : %d, %d。", row, col);
 		root = new TreeNode(key++, map[row][col]);
 		nowNode = root;
+		addAll();
+		while (pathnum > 0) {
+			if (DownSignal == true) {
+				while (nowNode.down != null)
+					walk(direction.DOWN);
+				if (nowNode.right == null)
+					goBack();
+			} else {
+				while (nowNode.top != null)
+					walk(direction.UP);
+				if (nowNode.right == null)
+					goBack();
+			}
+			// Sum
+			if(col == map.length-1){
+				
+			}
+			walk(direction.RIGHT);
+			DownSignal = !DownSignal;
+		}
 	}
 
-	void setnowNodeTop() {
-		if (nowNode.top == null || nowNode.top.key < this.key)
+	void walk(direction dir) {
+		this.dir = dir;
+		switch (dir) {
+		case UP:
+			setNowNodeUp();
+			addAll();
+		case DOWN:
+			setNowNodeDown();
+			addAll();
+		case RIGHT:
+			setNowNodeRight();
+			addAll();
+		}
+	}
+
+	boolean hasToStop() {
+		if (nowNode.right == null)
+			return true;
+		return false;
+	}
+
+	void goBack() {
+		nowNode = nowNode.parent;
+	}
+
+	void addAll() {
+		addTop();
+		addDown();
+		addRight();
+	}
+
+	int getRow() {
+		return row;
+	}
+
+	int getCol() {
+		return col;
+	}
+
+	void setNowNodeUp() {
+		if (nowNode.top == null || nowNode.top == nowNode.parent)
 			return;
 		nowNode.top.parent = nowNode;
 		nowNode = nowNode.top;
+		row--;
+		pathnum--;
 	}
 
-	void setnowNodeDown() {
-		if (nowNode.down == null || nowNode.down.key < this.key)
+	void setNowNodeDown() {
+		if (nowNode.down == null || nowNode.down == nowNode.parent)
 			return;
 		nowNode.down.parent = nowNode;
 		nowNode = nowNode.down;
+		row++;
+		pathnum--;
 	}
 
-	void setnowNodeRight() {
-		if (nowNode.right == null || nowNode.right.key < this.key)
+	void setNowNodeRight() {
+		if (nowNode.right == null)
 			return;
 		nowNode.right.parent = nowNode;
 		nowNode = nowNode.right;
+		col++;
+		pathnum--;
 	}
 
 	void addTop() {
@@ -82,9 +150,12 @@ class WalkPath {
 		if (row - 1 < 0 || map[row - 1][col] == 0) {
 			nowNode.top = null;
 			return;
+		} else if (nowNode.top == nowNode.parent) {
+			return;
 		}
 		TreeNode node = new TreeNode(key++, map[row - 1][col]);
 		nowNode.top = node;
+		pathnum++;
 	}
 
 	void addRight() {
@@ -95,6 +166,7 @@ class WalkPath {
 		}
 		TreeNode node = new TreeNode(key++, map[row][col + 1]);
 		nowNode.right = node;
+		pathnum++;
 	}
 
 	void addDown() {
@@ -102,20 +174,13 @@ class WalkPath {
 		if (row + 1 == map.length || map[row + 1][col] == 0) {
 			nowNode.down = null;
 			return;
+		}else if (nowNode.down == nowNode.parent) {
+			return;
 		}
 		TreeNode node = new TreeNode(key++, map[row + 1][col]);
 		nowNode.down = node;
+		pathnum++;
 	}
-	/*
-	 * TreeNode Find(int key) { nowNode = root; while (nowNode.key != key) {
-	 * 
-	 * if (nowNode.right.key == key) { nowNode = nowNode.right; break; } if
-	 * (nowNode.right.key < key) { if (nowNode.down.key == key) { nowNode =
-	 * nowNode.down; } else if (nowNode.top.key == key) { nowNode = nowNode.top;
-	 * } }
-	 * 
-	 * } return nowNode; }
-	 */
 }
 
 class Map {
