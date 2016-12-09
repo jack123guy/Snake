@@ -6,9 +6,9 @@ import static java.lang.System.out;
 public class Snake2 {
 
 	public static void main(String[] args) {
-		int row = 0, col = 0;
+
 		Map m = new Map();
-		TreeNode nextNode;
+
 		WalkPath wp = new WalkPath(m.map);
 
 	}
@@ -20,6 +20,7 @@ enum direction {
 
 class TreeNode {
 	TreeNode top, right, down, parent;
+	boolean topSignal = false, rightSignal = false, downSignal = false;
 	int value;
 	int key;
 
@@ -38,7 +39,7 @@ class WalkPath {
 	int[][] map;
 	int row = 0, col = 0, key = 0, walkTime = 0;
 	int pathnum = 0; // 所有可能路徑數目，為零時就走完了
-	boolean DownSignal = true;
+	boolean walkDownSignal = true;
 	TreeNode nowNode, root;
 	direction dir;
 
@@ -54,29 +55,45 @@ class WalkPath {
 			}
 			row++;
 		}
-		out.printf("出發點為 : %d, %d。", row, col);
+		out.printf("出發點為 : (%d, %d)。\n", row, col);
 		root = new TreeNode(key++, map[row][col]);
+		root.parent = root;
 		nowNode = root;
 		addAll();
 		while (pathnum > 0) {
-			if (DownSignal == true) {
-				while (nowNode.down != null)
-					walk(direction.DOWN);
-				if (nowNode.right == null)
-					goBack();
-			} else {
-				while (nowNode.top != null)
-					walk(direction.UP);
-				if (nowNode.right == null)
-					goBack();
+			out.printf("目前還有 %d 種可能未走完。\n", pathnum);
+			if (walkDownSignal == true) {
+				while (walkDownSignal == true) {
+					if (nowNode.downSignal == true) {
+						nowNode.downSignal = false;
+						walk(direction.DOWN);
+						out.printf("d現在位置 :(%d, %d);\n", row, col);
+					}
+				}
+				out.println("1");
+			} else if (walkDownSignal == false) {
+				while (walkDownSignal == false) {
+					if (nowNode.topSignal == true) {
+						nowNode.topSignal = false;
+						walk(direction.UP);
+						out.printf("u現在位置 :(%d, %d);\n", row, col);
+					}
+				}
+				out.println("2");
 			}
-			// Sum
-			if(col == map.length-1){
-				
+			out.println("3");
+			if (nowNode.rightSignal == true) {
+				nowNode.rightSignal = false;
+				out.printf("r現在位置 :(%d, %d);\n", row, col);
+				walk(direction.RIGHT);
+				walkDownSignal = !walkDownSignal;
+				out.printf("r現在位置 :(%d, %d);\n", row, col);
 			}
-			walk(direction.RIGHT);
-			DownSignal = !DownSignal;
+			out.printf("目前還有 %d 種可能未走完。\n", pathnum);
+			goBack();
+			// TODO Sum
 		}
+		out.printf("全部走完, 共有%d種可能。\n", walkTime);
 	}
 
 	void walk(direction dir) {
@@ -85,19 +102,16 @@ class WalkPath {
 		case UP:
 			setNowNodeUp();
 			addAll();
+			break;
 		case DOWN:
 			setNowNodeDown();
 			addAll();
+			break;
 		case RIGHT:
 			setNowNodeRight();
 			addAll();
+			break;
 		}
-	}
-
-	boolean hasToStop() {
-		if (nowNode.right == null)
-			return true;
-		return false;
 	}
 
 	void goBack() {
@@ -119,8 +133,13 @@ class WalkPath {
 	}
 
 	void setNowNodeUp() {
-		if (nowNode.top == null || nowNode.top == nowNode.parent)
+		if (row-1 <0 || map[row-1][col] == 0) {
+			out.println("U Revers");
+			walkDownSignal = true;
 			return;
+		}
+
+		out.println("UP");
 		nowNode.top.parent = nowNode;
 		nowNode = nowNode.top;
 		row--;
@@ -128,8 +147,12 @@ class WalkPath {
 	}
 
 	void setNowNodeDown() {
-		if (nowNode.down == null || nowNode.down == nowNode.parent)
+		if (row + 1 == map.length || map[row+1][col] == 0) {
+			out.println("D Revers");
+			walkDownSignal = false;
 			return;
+		}
+		out.println("DOWN");
 		nowNode.down.parent = nowNode;
 		nowNode = nowNode.down;
 		row++;
@@ -139,6 +162,7 @@ class WalkPath {
 	void setNowNodeRight() {
 		if (nowNode.right == null)
 			return;
+		out.println("RIGHT");
 		nowNode.right.parent = nowNode;
 		nowNode = nowNode.right;
 		col++;
@@ -148,47 +172,61 @@ class WalkPath {
 	void addTop() {
 		// key++;
 		if (row - 1 < 0 || map[row - 1][col] == 0) {
+			out.println("向上無路走");
 			nowNode.top = null;
 			return;
-		} else if (nowNode.top == nowNode.parent) {
+		} else if (walkDownSignal == true) {
+			out.println("向上回到母節點");
 			return;
 		}
 		TreeNode node = new TreeNode(key++, map[row - 1][col]);
+		out.println("向上有路可走");
 		nowNode.top = node;
+		nowNode.topSignal = true;
 		pathnum++;
+		walkTime++;
 	}
 
 	void addRight() {
 		// key++;
 		if (col + 1 == map.length || map[row][col + 1] == 0) {
+			out.println("向右無路走");
 			nowNode.right = null;
 			return;
 		}
 		TreeNode node = new TreeNode(key++, map[row][col + 1]);
+		out.println("向右有路可走");
 		nowNode.right = node;
+		nowNode.rightSignal = true;
 		pathnum++;
+		walkTime++;
 	}
 
 	void addDown() {
 		// key++;
 		if (row + 1 == map.length || map[row + 1][col] == 0) {
+			out.println("向下無路走");
 			nowNode.down = null;
 			return;
-		}else if (nowNode.down == nowNode.parent) {
+		} else if (walkDownSignal == false) {
+			out.println("向下回到母節點");
 			return;
 		}
 		TreeNode node = new TreeNode(key++, map[row + 1][col]);
+		out.println("向下有路可走");
 		nowNode.down = node;
+		nowNode.downSignal = true;
 		pathnum++;
+		walkTime++;
 	}
 }
 
 class Map {
 	int[][] map;
 	int size;
-	Scanner sc = new Scanner(System.in);
 
 	Map() {
+		Scanner sc = new Scanner(System.in);
 		out.print("請輸入地圖大小 : ");
 		size = sc.nextInt();
 		map = new int[size][size];
